@@ -15,13 +15,35 @@ class JsonParser {
         if (next() == '{') {
             return parseObject();
         }
+        if (next() == '[') {
+            return parseArray();
+        }
         throw new IllegalArgumentException("A valid JSON has to start with a curly brace '{'.");
     }
 
-    private JsonNode parseObject() {
-        consumeToken('{', "A valid JSON has to start with a curly brace '{'.");
+    private JsonNode parseArray() {
+        consumeToken('[', "A JSON Array has to start with '['.");
         eatWhitespace();
-        JsonNode node = new JsonNode();
+        JsonNode node = new JsonNode(JsonNodeType.ARRAY);
+        boolean forceLast = false;
+        while (next() != ']' && !forceLast) {
+            node.addValue(parseValue());
+            eatWhitespace();
+            if (next() != ',') {
+                forceLast = true;
+            } else {
+                pointer++;
+                eatWhitespace();
+            }
+        }
+        consumeToken(']', "A JSON Array has to end with ']'.");
+        return node;
+    }
+
+    private JsonNode parseObject() {
+        consumeToken('{', "A JSON Object has to start with '{'.");
+        eatWhitespace();
+        JsonNode node = new JsonNode(JsonNodeType.OBJECT);
         while (next() != '}') {
             switch (next()) {
                 case '"' -> {
@@ -52,19 +74,54 @@ class JsonParser {
         if (next() == '{') {
             return parseObject();
         }
-        if (isNumber(next())) {
+        if (isNextNumber()) {
             return parseNumber();
+        }
+        if (isNextTrue()) {
+            pointer += 4;
+            return true;
+        }
+        if (isNextFalse()) {
+            pointer += 5;
+            return false;
+        }
+        if (isNextNull()) {
+            pointer += 4;
+            return null;
         }
         throw new UnsupportedOperationException();
     }
 
-    private boolean isNumber(int codePoint) {
+    private boolean isNextNull() {
+        return next() == 'n'
+                && codePoint(pointer + 1) == 'u'
+                && codePoint(pointer + 2) == 'l'
+                && codePoint(pointer + 3) == 'l';
+    }
+
+    private boolean isNextTrue() {
+        return next() == 't'
+                && codePoint(pointer + 1) == 'r'
+                && codePoint(pointer + 2) == 'u'
+                && codePoint(pointer + 3) == 'e';
+    }
+
+    private boolean isNextFalse() {
+        return next() == 'f'
+                && codePoint(pointer + 1) == 'a'
+                && codePoint(pointer + 2) == 'l'
+                && codePoint(pointer + 3) == 's'
+                && codePoint(pointer + 4) == 'e';
+    }
+
+    private boolean isNextNumber() {
+        int codePoint = next();
         return codePoint >= '0' && codePoint <= '9';
     }
 
     private Double parseNumber() {
         StringBuilder builder = new StringBuilder();
-        while (isNumber(next())) {
+        while (isNextNumber()) {
             builder.appendCodePoint(next());
             pointer++;
         }
@@ -96,10 +153,14 @@ class JsonParser {
     }
 
     private int next() {
-        if (pointer >= length) {
+        return codePoint(pointer);
+    }
+
+    private int codePoint(int index) {
+        if (index >= length) {
             throw new IllegalArgumentException("EOF reached before JSON structure was closed.");
         }
-        return json.codePointAt(pointer);
+        return json.codePointAt(index);
     }
 
     private static boolean isWhitespace(int codePoint) {
