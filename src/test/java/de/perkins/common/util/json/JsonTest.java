@@ -118,9 +118,31 @@ public class JsonTest {
                             "key1": 2
                         """;
 
+        IllegalArgumentException e = Assertions.assertThrows(IllegalArgumentException.class, () -> Json.parse(json));
+        Assertions.assertEquals("EOF reached before JSON structure was closed.", e.getMessage());
+    }
+
+    @Test
+    public void shouldPassOnEmptyObject() {
+        String json = "{}";
+
+        JsonNode node = Json.parse(json);
+        Assertions.assertNotNull(node);
+    }
+
+    @Test
+    public void shouldParseNestedObject() {
+        String json = """
+                       {
+                            "key1": {
+                                "key2": 3
+                            }
+                        }
+                        """;
+
         JsonNode node = Json.parse(json);
         Assertions.assertTrue(node.isObject());
-        Assertions.assertTrue(node.hasField("key1"));
-        Assertions.assertEquals(2, node.getNumber("key1"));
+        Assertions.assertNotNull(node.getObject("key1"));
+        Assertions.assertEquals(3, node.getObject("key1").getNumber("key2"));
     }
 }

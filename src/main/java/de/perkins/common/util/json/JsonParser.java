@@ -12,18 +12,18 @@ class JsonParser {
 
     public JsonNode parse() {
         eatWhitespace();
-        if (json.codePointAt(pointer) == '{') {
+        if (next() == '{') {
             return parseObject();
         }
-        throw new UnsupportedOperationException();
+        throw new IllegalArgumentException("A valid JSON has to start with a curly brace '{'.");
     }
 
     private JsonNode parseObject() {
         consumeToken('{', "A valid JSON has to start with a curly brace '{'.");
         eatWhitespace();
         JsonNode node = new JsonNode();
-        while (json.codePointAt(pointer) != '}') {
-            switch (json.codePointAt(pointer)) {
+        while (next() != '}') {
+            switch (next()) {
                 case '"' -> {
                     String key = parseString();
                     eatWhitespace();
@@ -46,10 +46,13 @@ class JsonParser {
     }
 
     private Object parseValue() {
-        if (json.codePointAt(pointer) == '"') {
+        if (next() == '"') {
             return parseString();
         }
-        if (isNumber(json.codePointAt(pointer))) {
+        if (next() == '{') {
+            return parseObject();
+        }
+        if (isNumber(next())) {
             return parseNumber();
         }
         throw new UnsupportedOperationException();
@@ -61,8 +64,8 @@ class JsonParser {
 
     private Double parseNumber() {
         StringBuilder builder = new StringBuilder();
-        while (isNumber(json.codePointAt(pointer))) {
-            builder.appendCodePoint(json.codePointAt(pointer));
+        while (isNumber(next())) {
+            builder.appendCodePoint(next());
             pointer++;
         }
         return Double.parseDouble(builder.toString());
@@ -71,8 +74,8 @@ class JsonParser {
     private String parseString() {
         consumeToken('"', "A key has to be quoted.");
         StringBuilder builder = new StringBuilder();
-        while (json.codePointAt(pointer) != '"') {
-            builder.appendCodePoint(json.codePointAt(pointer));
+        while (next() != '"') {
+            builder.appendCodePoint(next());
             pointer++;
         }
         consumeToken('"', "A key has to be quoted.");
@@ -80,16 +83,23 @@ class JsonParser {
     }
 
     private void consumeToken(int tokenCodePoint, String errorMessage) {
-        if (json.codePointAt(pointer) != tokenCodePoint) {
+        if (next() != tokenCodePoint) {
             throw new IllegalArgumentException(errorMessage);
         }
         pointer++;
     }
 
     private void eatWhitespace() {
-        while (isWhitespace(json.codePointAt(pointer))) {
+        while (isWhitespace(next())) {
             pointer++;
         }
+    }
+
+    private int next() {
+        if (pointer >= length) {
+            throw new IllegalArgumentException("EOF reached before JSON structure was closed.");
+        }
+        return json.codePointAt(pointer);
     }
 
     private static boolean isWhitespace(int codePoint) {

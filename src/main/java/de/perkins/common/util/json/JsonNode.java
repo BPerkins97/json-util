@@ -22,6 +22,10 @@ public class JsonNode {
     }
 
     public double getNumber(String key) {
-        return (double)attributes.get(key);
+        return (double) attributes.get(key);
+    }
+
+    public JsonNode getObject(String key) {
+        return (JsonNode) attributes.get(key);
     }
 }
