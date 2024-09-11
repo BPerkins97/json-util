@@ -4,19 +4,16 @@ import java.util.HashMap;
 import java.util.Map;
 
 public class JsonNode {
-    private Map<String, Integer> attributes = new HashMap<>();
+    private Map<String, Object> attributes = new HashMap<>();
 
     public JsonNode() {
-    }
-
-    public JsonNode(int value) {
     }
 
     public boolean isObject() {
         return true;
     }
 
-    public void putField(String key, int value) {
+    public void putField(String key, Object value) {
         attributes.put(key, value);
     }
 
@@ -24,7 +21,7 @@ public class JsonNode {
         return attributes.containsKey(key);
     }
 
-    public int getInt(String key) {
-        return attributes.get(key);
+    public double getNumber(String key) {
+        return (double)attributes.get(key);
     }
 }

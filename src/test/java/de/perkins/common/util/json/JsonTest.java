@@ -15,7 +15,7 @@ public class JsonTest {
         JsonNode node = Json.parse(json);
         Assertions.assertTrue(node.isObject());
         Assertions.assertTrue(node.hasField("value"));
-        Assertions.assertEquals(1, node.getInt("value"));
+        Assertions.assertEquals(1, node.getNumber("value"));
     }
 
     @Test
@@ -29,7 +29,7 @@ public class JsonTest {
         JsonNode node = Json.parse(json);
         Assertions.assertTrue(node.isObject());
         Assertions.assertTrue(node.hasField("value"));
-        Assertions.assertEquals(2, node.getInt("value"));
+        Assertions.assertEquals(2, node.getNumber("value"));
     }
 
     @Test
@@ -44,7 +44,7 @@ public class JsonTest {
         Assertions.assertTrue(node.isObject());
         Assertions.assertFalse(node.hasField("value"));
         Assertions.assertTrue(node.hasField("key"));
-        Assertions.assertEquals(2, node.getInt("key"));
+        Assertions.assertEquals(2, node.getNumber("key"));
     }
 
     @Test
@@ -79,7 +79,7 @@ public class JsonTest {
                         """;
 
         IllegalArgumentException illegalArgumentException = Assertions.assertThrows(IllegalArgumentException.class, () -> Json.parse(json));
-        Assertions.assertEquals("A key has to be quoted.", illegalArgumentException.getMessage());
+        Assertions.assertEquals("After object declaration the object has to either be closed or have a field declaration.", illegalArgumentException.getMessage());
     }
 
     @Test
@@ -93,8 +93,8 @@ public class JsonTest {
 
         JsonNode node = Json.parse(json);
         Assertions.assertTrue(node.isObject());
-        Assertions.assertEquals(2, node.getInt("key1"));
-        Assertions.assertEquals(3, node.getInt("key2"));
+        Assertions.assertEquals(2, node.getNumber("key1"));
+        Assertions.assertEquals(3, node.getNumber("key2"));
     }
 
     @Test
@@ -108,6 +108,19 @@ public class JsonTest {
         JsonNode node = Json.parse(json);
         Assertions.assertTrue(node.isObject());
         Assertions.assertTrue(node.hasField("key1"));
-        Assertions.assertEquals(2, node.getInt("key1"));
+        Assertions.assertEquals(2, node.getNumber("key1"));
+    }
+
+    @Test
+    public void shouldThrowExceptionWhenNotClosingWithCurlyBrace() {
+        String json = """
+                       {
+                            "key1": 2
+                        """;
+
+        JsonNode node = Json.parse(json);
+        Assertions.assertTrue(node.isObject());
+        Assertions.assertTrue(node.hasField("key1"));
+        Assertions.assertEquals(2, node.getNumber("key1"));
     }
 }
