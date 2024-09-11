@@ -32,7 +32,7 @@ class JsonParser {
             if (next() != ',') {
                 forceLast = true;
             } else {
-                pointer++;
+                consume();
                 eatWhitespace();
             }
         }
@@ -56,14 +56,13 @@ class JsonParser {
                     eatWhitespace();
                 }
                 case ',' -> {
-                    pointer++;
+                    consume();
                     eatWhitespace();
                 }
-                default -> {
-                    throw new IllegalArgumentException("After object declaration the object has to either be closed or have a field declaration.");
-                }
+                default -> throw new IllegalArgumentException("After object declaration the object has to either be closed or have a field declaration.");
             }
         }
+        consumeToken('}', "A JSON Object has to end with '}'.");
         return node;
     }
 
@@ -74,7 +73,10 @@ class JsonParser {
         if (next() == '{') {
             return parseObject();
         }
-        if (isNextNumber()) {
+        if (next() == '[') {
+            return parseArray();
+        }
+        if (isNextNumber() || next() == '-') {
             return parseNumber();
         }
         if (isNextTrue()) {
@@ -89,7 +91,7 @@ class JsonParser {
             pointer += 4;
             return null;
         }
-        throw new UnsupportedOperationException();
+        throw new IllegalArgumentException("No JSON value found.");
     }
 
     private boolean isNextNull() {
@@ -121,9 +123,32 @@ class JsonParser {
 
     private Double parseNumber() {
         StringBuilder builder = new StringBuilder();
+        if (next() == '-') {
+            builder.appendCodePoint(consume());
+        }
         while (isNextNumber()) {
-            builder.appendCodePoint(next());
-            pointer++;
+            builder.appendCodePoint(consume());
+        }
+        if (next() == '.') {
+            builder.appendCodePoint(consume());
+            if (!isNextNumber()) {
+                throw new IllegalArgumentException();
+            }
+            while (isNextNumber()) {
+                builder.appendCodePoint(consume());
+            }
+        }
+        if (next() == 'e' || next() == 'E') {
+            builder.appendCodePoint(consume());
+            if (next() == '+' || next() == '-') {
+                builder.appendCodePoint(consume());
+            }
+            if (!isNextNumber()) {
+                throw new IllegalArgumentException();
+            }
+            while (isNextNumber()) {
+                builder.appendCodePoint(consume());
+            }
         }
         return Double.parseDouble(builder.toString());
     }
@@ -168,5 +193,11 @@ class JsonParser {
                 || codePoint == '\t'
                 || codePoint == '\n'
                 || codePoint == '\r';
+    }
+
+    private int consume() {
+        int codePoint = codePoint(pointer);
+        pointer++;
+        return codePoint;
     }
 }
